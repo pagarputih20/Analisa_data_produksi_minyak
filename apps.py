@@ -3,135 +3,133 @@ import plotly.express as px
 import streamlit as st
 
 st.set_page_config(layout="wide")
-st.header("Pusat Informasi Negara Penghasil Minyak")
 
-data_produksi_minyak = pd.read_csv('produksi_minyak_mentah.csv')
-data_kode_negara = pd.read_json('kode_negara_lengkap.json')
-mergeResult = pd.merge(left=data_kode_negara, right=data_produksi_minyak, left_on='alpha-3', right_on='kode_negara')
-dataframe = dataHasil=mergeResult[['name','tahun','produksi','alpha-3','country-code','iso_3166-2','region','sub-region','intermediate-region','region-code','sub-region-code']]
-dataset = dataframe.rename({'name': 'Negara','produksi':'Produksi' ,'tahun': 'Tahun','alpha-3':'Kode'}, axis='columns')
+def load_data():
+    dataMinyak = pd.read_csv('produksi_minyak_mentah.csv')
+    country = pd.read_json('kode_negara_lengkap.json')
+    mergeResult = pd.merge(left=country, right=dataMinyak, left_on='alpha-3', right_on='kode_negara')
+    data = dataHasil=mergeResult[['name','tahun','produksi','alpha-3','country-code','iso_3166-2','region','sub-region','intermediate-region','region-code','sub-region-code']]
+    data2 = data.rename({'name': 'Negara','produksi':'Jumlah Produksi' ,'tahun': 'Tahun','alpha-3':'Alias Negara','country-code':'Kode Negara','region':'Wilayah','sub-region':'Wilayah Bagian'}, axis='columns')
+    return data2
 
-
-lihat_data = st.button('Lihat data awal')
-if lihat_data:
-     st.subheader("Produksi minyak paling tinggi:")
-     info_data = dataset[['Negara','Tahun','Produksi','Kode','region','sub-region']]
-     hasil = info_data[info_data['Produksi']==info_data['Produksi'].max()]
-     st.dataframe(hasil)
-        
-     
-     Data=dataset[dataset['Negara']=='Saudi Arabia']
-     Data = Data[['Negara','Tahun','Produksi','Kode','region','sub-region']]
-     Data['Produksi Kumulatif'] = Data['Produksi'].cumsum()
-     total = Data[Data['Produksi Kumulatif']==Data['Produksi Kumulatif'].max()]
-     bar_chart = px.bar(Data, x='Tahun',y='Produksi')
-     st.plotly_chart(bar_chart,use_container_width=True)
-     st.subheader("Produksi minyak paling tinggi secara kumulatif:")
-     st.dataframe(total)
-
-     st.subheader("Produksi minyak paling rendah:")
-     Data = dataset[dataset['Produksi'] != 0]
-     Data = Data[['Negara','Tahun','Produksi','Kode','region','sub-region']]
-     total = Data[Data['Produksi']==Data['Produksi'].min()]
-     st.dataframe(total)
-
-     Data = dataset[dataset['Produksi'] == 0]
-     st.subheader("Negara-negara yang tidak berproduksi:")
-     total = Data[['Negara','Tahun','Produksi','Kode','country-code','region','sub-region']]
-     st.dataframe(total)
-
-     
-
-     
-st.sidebar.subheader("Analisa data berdasarkan negara")
+dataset=load_data()
 datanegara = pd.read_json('kode_negara_lengkap.json')
-pilihanNegara = st.sidebar.selectbox('Pilih negara',datanegara['name'])
-state_data = dataset[dataset['Negara'] == pilihanNegara]
+select = st.sidebar.selectbox('Pilih negara',datanegara['name'])
+state_data = dataset[dataset['Negara'] == select]
+select_year = st.sidebar.selectbox('Pilih tahun',dataset['Tahun'])
+state_year = dataset[dataset['Tahun'] == select_year]
+
 
 def get_total_dataframe(dataset):
-    total_dataframe = dataset[['Negara','Tahun','Produksi']]
+    total_dataframe = dataset[['Negara','Tahun','Jumlah Produksi']]
     return total_dataframe
+def get_total_year(dataset):
+    tahun =dataset[dataset["Tahun"] == select_year]
+    tahun['Produksi Kumulatif'] = tahun['Jumlah Produksi'].cumsum()
+    year_dataframe = tahun[['Negara','Alias Negara','Kode Negara','Wilayah',
+                            'Wilayah Bagian','Tahun','Jumlah Produksi','Produksi Kumulatif']]
+    return year_dataframe
 def get_data_info(dataset):
-    info_data = dataset[['Negara','Kode','country-code','region','sub-region','Tahun','Produksi']]
+    info_data = dataset[['Negara','Alias Negara','Kode Negara','Wilayah','Wilayah Bagian','Tahun','Jumlah Produksi']]
     pd.set_option('display.max_colwidth', 0)
     return info_data
 
+
+dataset_bersih = dataset[dataset['Jumlah Produksi'] != 0]
 state_total = get_total_dataframe(state_data)
-if st.sidebar.checkbox("Lihat Negara"):
-     st.header("Analisa data Negara")
-     st.subheader("Tampilan data negara: "+pilihanNegara)
-     st.write(state_total,width=2024, height=2000)
+menu = st.sidebar.radio("Lihat Berdasarkan:",("Show All","Negara","Tahun"))
+if menu=="Show All":
+    st.markdown("## **Tampilan seluruh dataset**")
+    st.dataframe(dataset, width=None, height=500)
+    if st.button("Analisa Data"):
+        st.subheader("Produksi minyak paling tinggi:")
+        info_data = dataset[['Negara','Tahun','Jumlah Produksi','Alias Negara','Wilayah','Wilayah Bagian']]
+        hasil = info_data[info_data['Jumlah Produksi']==info_data['Jumlah Produksi'].max()]
+        st.dataframe(hasil)
+        
+        st.subheader("Produksi minyak paling tinggi secara kumulatif:")
+        dataKumulatif = dataset
+        allData=dataKumulatif[dataKumulatif['Negara']=='Saudi Arabia']
+        allData = allData[['Negara','Tahun','Jumlah Produksi','Alias Negara','Wilayah','Wilayah Bagian']]
+        allData['Kumulatif Tertinggi'] = allData['Jumlah Produksi'].cumsum()
+        allData = allData[allData['Kumulatif Tertinggi']==allData['Kumulatif Tertinggi'].max()]
+        st.dataframe(allData)
 
-     if st.sidebar.checkbox("Lihat grafik"):
-          st.subheader("Tampilan grafik pada negara: "+pilihanNegara)
-          state_total_graph = px.bar(state_total, x='Tahun',y='Produksi',labels=("Negara penghasil minyak = "+pilihanNegara))
-          st.plotly_chart(state_total_graph,use_container_width=True)
+        dataset_olah = dataKumulatif[dataKumulatif['Jumlah Produksi'] != 0]
+        st.subheader("Produksi minyak paling rendah:")
+        info_data = dataset_olah[['Negara','Tahun','Jumlah Produksi','Alias Negara','Wilayah','Wilayah Bagian']]
+        hasil = info_data[info_data['Jumlah Produksi']==info_data['Jumlah Produksi'].min()]
+        st.dataframe(hasil)
 
-          dataMax = state_total.nlargest(10, 'Produksi')
-          dataf = dataMax[['Negara','Tahun','Produksi']]
-          tahun_hasil = dataMax[dataMax['Produksi']==dataMax['Produksi'].max()]
-          tahun_max = tahun_hasil['Tahun']
-          tahun_max = tahun_max.to_string(index=False)
-          st.subheader(pilihanNegara+" menghasilkan produksi tertinggi pada tahun "+tahun_max)
-          if st.sidebar.checkbox("Lihat detail negara produksi "+pilihanNegara):
-               st.header("Data untuk Negara "+pilihanNegara)
-               info_negara = get_data_info(state_data)
-               st.write(info_negara)
-            
+        tidak_produksi = dataKumulatif[dataKumulatif['Jumlah Produksi'] == 0]
+        st.subheader("Negara-negara yang tidak berproduksi:")
+        hasil = tidak_produksi[['Negara','Tahun','Jumlah Produksi','Alias Negara','Wilayah','Wilayah Bagian']]
+        st.dataframe(hasil)
+    
+if menu=="Negara":
+    st.markdown("### Grafik pada negara "+select)
+    state_total_graph = px.bar(state_total, x='Tahun',y='Jumlah Produksi',labels={'Negara produsen minyak = %s' % (select)})
+    st.plotly_chart(state_total_graph,use_container_width=True)
 
-#Analisa data berdasarkan tahun
-st.sidebar.subheader("Analisa data berdasarkan tahun")
-pilihanTahun = st.sidebar.selectbox('Pilih Tahun',dataset['Tahun'])
-tahun = dataset[dataset['Tahun'] == pilihanTahun]
+    if st.button("Analisa Data "):
+        dataset_negara = dataset
+        st.markdown("Produksi paling tinggi")
+        dataset_olah = dataset_negara[dataset_negara['Negara']==select]
+        dataset_olah = dataset_olah[['Negara','Tahun','Jumlah Produksi','Alias Negara','Wilayah','Wilayah Bagian']]
+        hasil = dataset_olah[dataset_olah['Jumlah Produksi']==dataset_olah['Jumlah Produksi'].max()]
+        st.dataframe(hasil)
 
-def get_total_year(dataset):
-    tahun =dataset[dataset["Tahun"] == pilihanTahun]
-    year_dataframe = tahun[['Negara','Tahun','Produksi']]
-    return year_dataframe
-year_total = get_total_year(tahun)
+        st.markdown("Produksi paling rendah")
+        dataset_olah=dataset[dataset['Negara']==select]
+        info_data = dataset_olah[['Negara','Tahun','Jumlah Produksi','Alias Negara','Wilayah','Wilayah Bagian']]
+        hasil = info_data[info_data['Jumlah Produksi']==info_data['Jumlah Produksi'].min()]
+        st.dataframe(hasil)
 
-if st.sidebar.checkbox("Lihat Tahun"):
-     dataset_bersih = dataset[dataset['Produksi'] != 0]
-     
-     st.write(dataset_bersih)
-     dataset_tahun = dataset_bersih[['Negara','Tahun','Produksi','Kode','region','sub-region']]
-     
-     st.header("Analisa data berdasarkan Tahun")
-     grafik_tahun = px.bar(year_total, x='Produksi',y='Negara',labels=("Negara penghasil minyak = "+pilihanNegara))
-     st.plotly_chart(grafik_tahun,use_container_width=True)
-     if st.sidebar.checkbox("Grafik berdasar tahun"):
-          st.subheader("Data negara penghasil pada tahun "+str(pilihanTahun))
-          year_total_graph = px.bar(year_total,x='Produksi',y='Negara',labels={'Jumlah':'Produksi tahun %s' % (pilihanTahun)})
-          st.plotly_chart(year_total_graph,use_container_width=True)
-          if st.sidebar.checkbox("Lihat 5 produsen tertinggi %s"%(pilihanTahun)):
-               st.subheader("5 Negara produsen tertinggi pada tahun "+str(pilihanTahun))
-               data_5 = year_total.nlargest(5, 'Produksi')
-               data_hasil = data_5[['Negara','Tahun','Produksi']]
-               max_data = px.bar(data_hasil, x='Produksi',y='Negara',labels={'Jumlah':'Produksi tahun %s' % (pilihanTahun)})
-               st.plotly_chart(max_data,use_container_width=True)
-               tahun_hasil = data_5[data_5['Produksi']==data_5['Produksi'].max()]
-               negara_max = tahun_hasil['Negara']
-               negara_max = negara_max.to_string(index=False)
-               st.subheader(negara_max+" menjadi negara penghasil minyak tertinggi pada tahun "+str(pilihanTahun))
-     if st.sidebar.checkbox("Informasi data berdasar tahun"):
-          st.markdown("Produksi paling tinggi %s"%(pilihanTahun))
-          data_tahun =dataset_tahun[dataset_tahun["Tahun"] == pilihanTahun]
-          data_tahun=data_tahun[data_tahun['Produksi']==data_tahun['Produksi'].max()]
-          st.write(data_tahun)
+        st.markdown("Produksi paling tinggi secara kumulatif")
+        dataset_olah=dataset_negara[dataset_negara['Negara']==select]
+        dataset_olah = dataset_olah[['Negara','Tahun','Jumlah Produksi','Alias Negara','Wilayah','Wilayah Bagian']]
+        dataset_olah['Kumulatif Tertinggi'] = dataset_olah['Jumlah Produksi'].cumsum()
+        hasil = dataset_olah[dataset_olah['Kumulatif Tertinggi']==dataset_olah['Kumulatif Tertinggi'].max()]
+        st.dataframe(hasil)
 
-          st.markdown("Produksi paling rendah %s"%(pilihanTahun))
-          data_rendah =dataset_tahun[dataset_tahun["Tahun"] == pilihanTahun]
-          data_rendah=data_rendah[data_rendah['Produksi']==data_rendah['Produksi'].min()]
-          st.write(data_rendah)
+        st.markdown("Produksi paling rendah secara kumulatif")
+        dataset_olah=dataset_negara[dataset_negara['Negara']==select]
+        dataset_olah = dataset_olah[['Negara','Tahun','Jumlah Produksi','Alias Negara','Wilayah','Wilayah Bagian']]
+        dataset_olah['Kumulatif Terendah'] = dataset_olah['Jumlah Produksi'].cumsum()
+        hasil = dataset_olah[dataset_olah['Kumulatif Terendah']==dataset_olah['Kumulatif Terendah'].min()]
+        st.dataframe(hasil)
+       
+year_total = get_total_year(state_year)
+if menu=="Tahun":
+    dataset_bersih = dataset_bersih[['Negara','Tahun','Jumlah Produksi','Alias Negara','Wilayah','Wilayah Bagian']]
+    st.markdown("### Grafik negara yang menghasilkan minyak pada " +"tahun %s " % (select_year))
+    year_total_graph = px.bar(year_total,x='Jumlah Produksi',y='Negara',labels={'Jumlah':'Produksi tahun %s' % (select_year)})
+    st.plotly_chart(year_total_graph,use_container_width=True)
 
-          st.markdown("Negara tidak produksi pada tahun %s"%(pilihanTahun))
-          tidak_produksi = dataset[dataset["Tahun"] == pilihanTahun]
-          tidak_produksi = tidak_produksi[tidak_produksi['Produksi'] == 0]
-          tidak_produksi = tidak_produksi[['Negara','Tahun','Produksi','Kode','region','sub-region']]
-          st.write(tidak_produksi)
+    if st.button("Analisa Data"):
+        st.markdown("Produksi paling tinggi")
+        data_tahun =dataset_bersih[dataset_bersih["Tahun"] == select_year]
+        data_tahun=data_tahun[data_tahun['Jumlah Produksi']==data_tahun['Jumlah Produksi'].max()]
+        st.dataframe(data_tahun)
 
+        st.markdown("Produksi paling rendah")
+        data_rendah =dataset_bersih[dataset_bersih["Tahun"] == select_year]
+        data_rendah=data_rendah[data_rendah['Jumlah Produksi']==data_rendah['Jumlah Produksi'].min()]
+        st.dataframe(data_rendah)
 
+        st.markdown("Negara tidak produksi pada tahun %s"%(select_year))
+        tidak_produksi = dataset[dataset["Tahun"] == select_year]
+        tidak_produksi = tidak_produksi[tidak_produksi['Jumlah Produksi'] == 0]
+        tidak_produksi = tidak_produksi[['Negara','Tahun','Jumlah Produksi','Alias Negara','Wilayah','Wilayah Bagian']]
+        st.dataframe(tidak_produksi)
 
+    if st.checkbox("10 Negara tertinggi produksi minyak pada tahun %s"%(select_year)):
+        dataMax = year_total.nlargest(10, 'Jumlah Produksi')
+        dataf = dataMax[['Negara','Tahun','Jumlah Produksi']]
+        max_data = px.bar(dataf, x='Jumlah Produksi',y='Negara',labels={'Jumlah':'Produksi tahun %s' % (select_year)})
+        st.plotly_chart(max_data,use_container_width=True)
 
+st.markdown(" <style>footer {visibility: hidden;}</style> ", unsafe_allow_html=True)
+        
 
-          
+   
