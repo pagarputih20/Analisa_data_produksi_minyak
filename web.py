@@ -92,13 +92,8 @@ year_total = get_total_year(tahun)
 
 if st.sidebar.checkbox("Lihat Tahun"):
      dataset_bersih = dataset[dataset['Produksi'] != 0]
-     
-     st.write(dataset_bersih)
-     dataset_tahun = dataset_bersih[['Negara','Tahun','Produksi','Kode','region','sub-region']]
-     
+     dataset_tahun = dataset_bersih[['Negara','Tahun','Produksi','Kode','region','sub-region']]  
      st.header("Analisa data berdasarkan Tahun")
-     grafik_tahun = px.bar(year_total, x='Produksi',y='Negara',labels=("Negara penghasil minyak = "+pilihanNegara))
-     st.plotly_chart(grafik_tahun,use_container_width=True)
      if st.sidebar.checkbox("Grafik berdasar tahun"):
           st.subheader("Data negara penghasil pada tahun "+str(pilihanTahun))
           year_total_graph = px.bar(year_total,x='Produksi',y='Negara',labels={'Jumlah':'Produksi tahun %s' % (pilihanTahun)})
