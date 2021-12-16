@@ -25,6 +25,7 @@ select = st.selectbox('Pilih negara',data_select_negara['Negara'])
 negara_data = dataset[dataset['Negara'] == select]
 if select:
     state_total = get_total_dataframe(negara_data)
+    st.dataframe(state_total[["Negara",'Kode Negara',"Tahun","Produksi",'Region','Sub Region']])
 
     st.subheader("Grafik pendapatan minyak negara "+select)
     state_total_graph = px.bar(state_total, x='Tahun',y='Produksi',labels="Grafik pendapatan minyak",color='Produksi')
@@ -67,6 +68,19 @@ if select_year:
     st.markdown("Negara tidak berproduksi pada tahun "+str(select_year))
     data_tahun =dataset_tidak_produksi[dataset_tidak_produksi["Tahun"] == select_year]
     st.dataframe(data_tahun[["Negara",'Kode Negara',"Tahun","Produksi",'Region','Sub Region']])
+
+st.header("INFORMASI TAMBAHAN UNTUK NEGARA TERBESAR, TERKECIL, DAN NEGARA 0 PRODUKSI")
+st.markdown("Negara dengan produksi terbesar sepanjang tahun ")
+data_tahun_tertinggi = dataset_bersih
+data_tertinggi = data_tahun_tertinggi.sort_values(by=['Produksi'],ascending=False).head(1)
+#data_tahun_tertinggi = data_tahun_tertinggi[data_tahun_tertinggi['Produksi']==data_tahun_tertinggi['Produksi'].max()]
+st.dataframe(data_tertinggi[["Negara",'Kode Negara',"Tahun","Produksi",'Region','Sub Region']])
+
+st.markdown("Negara dengan produksi terkecil sepanjang tahun ")
+data_terkecil = dataset_bersih
+data_terkecil = data_tahun_tertinggi.sort_values(by=['Produksi'],ascending=True).head(1)
+#data_tahun_tertinggi = data_tahun_tertinggi[data_tahun_tertinggi['Produksi']==data_tahun_tertinggi['Produksi'].min()]
+st.dataframe(data_terkecil[["Negara",'Kode Negara',"Tahun","Produksi",'Region','Sub Region']])
 
 st.markdown("Negara tidak produksi di sepanjang tahun")
 st.dataframe(dataset_tidak_produksi)
