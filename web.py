@@ -34,12 +34,14 @@ if select:
 st.subheader("NEGARA DENGAN NILAI KUMULATIF PRODUKSI TERTINGGI")
 nilai_cum = st.slider("Geser slider ke kanan", min_value=1, max_value=10, value=1)
 Data = dataset[['Negara','Kode Negara','Tahun','Produksi','Region','Sub Region']]
-Data['Produksi Kumulatif'] = Data['Produksi'].cumsum()
-total = Data.sort_values(by=['Produksi Kumulatif'],ascending=False)
+Data['Total Produksi Kumulatif'] = Data['Produksi'].cumsum()
+total = Data.sort_values(by=['Total Produksi Kumulatif'],ascending=False)
 urut = total.groupby('Negara',as_index=False).sum()
 dataMax = urut.sort_values(by=['Produksi'],ascending=False).head(nilai_cum)
 bar_chart = px.bar(dataMax, x='Negara',y='Produksi',color='Negara')
 st.plotly_chart(bar_chart,use_container_width=True)
+hasilData = dataMax[["Negara","Produksi"]]
+st.dataframe(hasilData)
 
 
 st.subheader("GRAFIK PENDAPATAN MINYAK BERDASARKAN TAHUN")
