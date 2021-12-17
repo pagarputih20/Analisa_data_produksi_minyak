@@ -25,7 +25,7 @@ select = st.selectbox('Pilih negara',data_select_negara['Negara'])
 negara_data = dataset[dataset['Negara'] == select]
 if select:
     state_total = get_total_dataframe(negara_data)
-    st.dataframe(state_total[["Negara",'Kode Negara',"Tahun","Produksi",'Region','Sub Region']])
+    st.dataframe(negara_data)
 
     st.subheader("Grafik pendapatan minyak negara "+select)
     state_total_graph = px.bar(state_total, x='Tahun',y='Produksi',labels="Grafik pendapatan minyak",color='Produksi')
@@ -48,6 +48,7 @@ if select_year:
     
     state_year = dataset[dataset['Tahun'] == select_year]
     state_total = get_total_dataframe(state_year)
+    st.dataframe(state_total)
     st.markdown("Tampilan Negara tertinggi Penghasil Minyak pada tahun "+str(select_year))
     nilai = st.slider("Geser slider untuk menampilkan jumlah data", min_value=1, max_value=10, value=1)
     dataMax = state_total.sort_values(by=['Produksi'],ascending=False).head(nilai)
